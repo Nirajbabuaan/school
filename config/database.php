@@ -52,6 +52,12 @@ return [
             'prefix' => '',
             'strict' => true,
             'engine' => null,
+            // Cloud MySQL providers (Aiven, TiDB, PlanetScale...) require TLS.
+            // Enable with DB_SSL=true (optionally MYSQL_ATTR_SSL_CA=/path/to/ca.pem).
+            'options' => env('DB_SSL', false) ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
+            ], function ($v) { return $v !== null; }) : [],
         ],
 
         'pgsql' => [

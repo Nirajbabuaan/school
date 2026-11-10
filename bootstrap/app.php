@@ -43,6 +43,46 @@ $app->singleton(
 
 /*
 |--------------------------------------------------------------------------
+| Vercel (serverless) support
+|--------------------------------------------------------------------------
+|
+| The Vercel filesystem is read-only except /tmp, so storage is moved there.
+| Laravel 8 also turns PHP 8.x deprecation notices into exceptions, so they
+| are ignored after the exception handler has been bootstrapped.
+|
+*/
+
+if (getenv('VERCEL') || getenv('APP_STORAGE')) {
+    $storage = getenv('APP_STORAGE') ?: '/tmp/storage';
+
+    foreach ([
+        '',
+        '/app',
+        '/app/public',
+        '/framework',
+        '/framework/cache',
+        '/framework/cache/data',
+        '/framework/sessions',
+        '/framework/views',
+        '/logs',
+    ] as $dir) {
+        if (!is_dir($storage . $dir)) {
+            @mkdir($storage . $dir, 0777, true);
+        }
+    }
+
+    $app->useStoragePath($storage);
+
+    $app->afterBootstrapping(
+        Illuminate\Foundation\Bootstrap\HandleExceptions::class,
+        function () {
+            error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+        }
+    );
+}
+
+/*
+|--------------------------------------------------------------------------
 | Return The Application
 |--------------------------------------------------------------------------
 |
